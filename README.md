@@ -65,7 +65,8 @@ npx playwright show-report        # open the HTML report of the last run
 
 ### Maestro (native end-to-end, Android)
 
-1. Start an emulator (Android Studio > Device Manager, or `emulator -avd Medium_Phone_2`).
+1. Start an emulator: Android Studio > Device Manager, or in PowerShell
+   `& "$env:LOCALAPPDATA\Android\Sdk\emulator\emulator.exe" -avd Medium_Phone_2`.
 2. Build and install a release APK (no Metro server needed):
 
    ```bash
