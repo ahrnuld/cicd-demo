@@ -1,0 +1,32 @@
+# Maestro flow: drives the installed app from the outside, like a user.
+# Run it with: maestro test .maestro
+appId: dev.lecture.cicddemo
+---
+- launchApp:
+    clearState: true
+
+# Empty submit shows a validation message
+- tapOn:
+    id: login-button
+- assertVisible: Please enter your email and password.
+
+# Log in
+- tapOn:
+    id: email-input
+- inputText: student@school.nl
+- tapOn:
+    id: password-input
+- inputText: secret123
+- hideKeyboard
+- tapOn:
+    id: login-button
+- assertVisible: Welcome
+
+# Add a task
+- tapOn:
+    id: task-input
+- inputText: Write tests
+- tapOn:
+    id: add-task-button
+- assertVisible: .*Write tests.*
+- assertVisible: 1 open

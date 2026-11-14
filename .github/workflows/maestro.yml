@@ -1,0 +1,72 @@
+# .github/workflows/maestro.yml
+# End-to-end tests on a real Android build in an emulator.
+# Slower than the web tests (~15-25 min), so this runs nightly
+# and on demand instead of on every pull request.
+
+name: Maestro (Android)
+
+on:
+  schedule:
+    - cron: '0 2 * * *'    # every night at 02:00 UTC
+  workflow_dispatch:       # adds a "Run workflow" button in the Actions tab
+
+jobs:
+  android-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - uses: actions/setup-java@v6     # Gradle needs a JDK
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - run: npm ci
+
+      # 1. Build the app: generate the native project, then a release APK.
+      #    No EAS account needed; the APK is signed with a debug key.
+      - name: Build Android APK
+        run: |
+          npx expo prebuild --platform android --no-install
+          cd android
+          ./gradlew assembleRelease -PreactNativeArchitectures=x86_64
+
+      # 2. Install the Maestro CLI
+      - name: Install Maestro
+        run: |
+          curl -fsSL "https://get.maestro.mobile.dev" | bash
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+
+      # Linux runners need this to run the emulator with hardware acceleration
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      # 3. Start an emulator, 4. install the app, 5. run the flows
+      - name: Run Maestro flows in an emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          script: |
+            adb install android/app/build/outputs/apk/release/app-release.apk
+            maestro test .maestro --format junit --output maestro-report.xml
+
+      - name: Upload Maestro results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: maestro-results
+          path: |
+            maestro-report.xml
+            ~/.maestro/tests/
+          retention-days: 14
