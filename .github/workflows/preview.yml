@@ -1,0 +1,51 @@
+# .github/workflows/preview.yml
+# Every pull request gets its own web preview link on Vercel,
+# posted as a comment on the PR. Testers only need to open the link.
+#
+# Needs three repository secrets (Settings > Secrets and variables > Actions):
+#   VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID   (see README)
+
+name: Web preview
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: write     # allow the workflow to comment on the PR
+
+jobs:
+  deploy-preview:
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build the web version
+        run: npm run build:web
+
+      - name: Deploy to Vercel (preview, not production)
+        id: deploy
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          url=$(npx --yes vercel deploy dist --yes --token "$VERCEL_TOKEN")
+          echo "url=$url" >> "$GITHUB_OUTPUT"      # pass the URL on to the next step
+
+      - name: Post the link on the pull request
+        env:
+          GH_TOKEN: ${{ github.token }}            # lets the gh CLI talk to GitHub
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          gh pr comment $PR \
+            --body "🔍 Web preview for this PR: ${{ steps.deploy.outputs.url }}" \
+            --edit-last --create-if-none

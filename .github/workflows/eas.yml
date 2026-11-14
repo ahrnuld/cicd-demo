@@ -1,0 +1,67 @@
+# .github/workflows/eas.yml
+# Native test builds and over-the-air updates with Expo Application Services.
+#
+# - Every push to main: publish the JavaScript as an EAS Update on the
+#   "preview" channel. Testers who already installed a preview build get it
+#   the next time they open the app - no new build needed.
+# - Manual ("Run workflow" button): start a new Android preview build (APK)
+#   on EAS. Needed after native changes (new native library, new permission).
+#
+# Needs one repository secret: EXPO_TOKEN (see README)
+
+name: EAS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  update:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Set up EAS (logs in with the token)
+        uses: expo/expo-github-action@v9
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - run: npm ci
+
+      # The commit message goes through an env variable, not straight into
+      # the command: a message with quotes or $(...) could otherwise run code.
+      - name: Publish an update to the preview channel
+        env:
+          MESSAGE: ${{ github.event.head_commit.message }}
+        run: eas update --channel preview --message "$MESSAGE" --non-interactive
+
+  build:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - uses: expo/expo-github-action@v9
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - run: npm ci
+
+      # The build itself runs on Expo's servers; --no-wait ends this job
+      # right away. Follow progress on expo.dev.
+      - name: Start an Android preview build
+        run: eas build --platform android --profile preview --non-interactive --no-wait
