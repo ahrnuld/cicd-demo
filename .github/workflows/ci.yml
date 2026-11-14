@@ -9,6 +9,7 @@ on:
   pull_request:            # every pull request (and every new push to it)
   push:
     branches: [main]       # and every push to main
+  workflow_dispatch:       # and a "Run workflow" button in the Actions tab
 
 # 3. JOBS: each job runs on its own fresh virtual machine
 jobs:
