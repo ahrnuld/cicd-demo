@@ -1,0 +1,39 @@
+# .github/workflows/ci.yml
+# Continuous integration: check every pull request automatically.
+
+# 1. NAME: shown in the "Actions" tab on GitHub
+name: CI
+
+# 2. TRIGGER: when does this workflow run?
+on:
+  pull_request:            # every pull request (and every new push to it)
+  push:
+    branches: [main]       # and every push to main
+
+# 3. JOBS: each job runs on its own fresh virtual machine
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest # a free Linux machine hosted by GitHub
+
+    # 4. STEPS: run one after another; if one fails, the job stops
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v7        # "uses" = a ready-made action
+
+      - name: Install Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm                     # reuse downloaded packages between runs
+
+      - name: Install dependencies
+        run: npm ci                      # "run" = a shell command
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Unit and component tests
+        run: npm test -- --ci
