@@ -1,20 +1,22 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { StyleSheet, View } from 'react-native';
 
+import { HomeScreen } from './src/HomeScreen';
+import { LoginScreen } from './src/LoginScreen';
+
+// Two screens, no navigation library: if someone is logged in, show Home.
 export default function App() {
+  const [email, setEmail] = useState<string | null>(null);
+
   return (
     <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
+      {email === null ? <LoginScreen onLogin={setEmail} /> : <HomeScreen email={email} />}
       <StatusBar style="auto" />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  container: { flex: 1, backgroundColor: '#fff' },
 });
