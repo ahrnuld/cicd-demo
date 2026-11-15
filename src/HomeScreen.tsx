@@ -19,7 +19,7 @@ export function HomeScreen({ email }: Props) {
   return (
     <View style={styles.container}>
       <Text testID="welcome-text" style={styles.title} role="heading">
-        Welcome
+        Welcome!
       </Text>
       <Text style={styles.subtitle}>Signed in as {email}</Text>
 
