@@ -23,7 +23,7 @@ export function LoginScreen({ onLogin }: Props) {
   return (
     <View style={styles.container}>
       <Text style={styles.title} role="heading">
-        Please log in
+        Log in
       </Text>
 
       <TextInput
